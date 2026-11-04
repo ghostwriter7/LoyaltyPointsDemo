@@ -1,9 +1,6 @@
 package com.rozplochowski.loyaltypoints.model;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -26,6 +23,9 @@ public class UserPoints {
     @NotBlank
     @Size(max = 100)
     private String nickname;
+
+    @Version
+    private Integer version = 0;
 
     public void addPoints(Long points) {
         this.points += points;

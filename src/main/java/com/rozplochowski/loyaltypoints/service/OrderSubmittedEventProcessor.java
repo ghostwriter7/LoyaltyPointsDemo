@@ -1,14 +1,16 @@
 package com.rozplochowski.loyaltypoints.service;
 
 import com.rozplochowski.loyaltypoints.model.OrderSubmittedEvent;
+import com.rozplochowski.loyaltypoints.model.UserPoints;
+import com.rozplochowski.loyaltypoints.model.outbox.OutboxRecord;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -20,8 +22,9 @@ class OrderSubmittedEventProcessor {
 
     @PersistenceContext
     private final EntityManager manager;
+    private final ObjectMapper objectMapper;
 
-    private final ApplicationEventPublisher eventPublisher;
+    private static final String USER_ID = "userId";
 
     @Transactional
     void processOrderSubmittedEvent(OrderSubmittedEvent event) {
@@ -29,7 +32,7 @@ class OrderSubmittedEventProcessor {
 
         var result = manager.createNativeQuery("insert ignore into processed_orders (order_id, user_id, points_awarded) values (:orderId, :userId, :pointsAwarded)")
                 .setParameter("orderId", event.orderId())
-                .setParameter("userId", event.userId())
+                .setParameter(USER_ID, event.userId())
                 .setParameter("pointsAwarded", points.longValue())
                 .executeUpdate();
 
@@ -40,13 +43,25 @@ class OrderSubmittedEventProcessor {
 
         manager.createNativeQuery("""
                         insert into user_points (user_id, points, nickname) values (:userId, :points, :nickname) as new
-                        on duplicate key update user_points.points = user_points.points + new.points""")
-                .setParameter("userId", event.userId())
+                        on duplicate key update user_points.points = user_points.points + new.points, user_points.version = user_points.version + 1""")
+                .setParameter(USER_ID, event.userId())
                 .setParameter("points", points.longValue())
                 .setParameter("nickname", "User-" + event.userId())
                 .executeUpdate();
 
-        eventPublisher.publishEvent(new UserPointsIncreasedEvent(event.userId(), points.longValue()));
+        var userPoints = manager.createQuery("select up from UserPoints up where up.userId = :userId", UserPoints.class)
+                .setParameter(USER_ID, event.userId())
+                .getSingleResult();
+
+        var userPointsChange = new UserPointsChange(userPoints.getNickname(), event.userId(), userPoints.getPoints(), userPoints.getVersion());
+
+        var outbox = OutboxRecord.create(
+                userPoints.getUserId(), UserPoints.class.getSimpleName(), "UserPointsChanged",
+                objectMapper.writeValueAsString(userPointsChange),
+                "user_points.change"
+        );
+
+        manager.persist(outbox);
 
         log.info("User [{}] points increased by {}", event.userId(), points.longValue());
     }
