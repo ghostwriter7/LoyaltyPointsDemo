@@ -25,6 +25,7 @@ public class UserPoints {
     private String nickname;
 
     @Version
+    @Column(columnDefinition = "int default 0")
     private Integer version = 0;
 
     public void addPoints(Long points) {
