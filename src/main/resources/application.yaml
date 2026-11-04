@@ -1,3 +1,8 @@
 spring:
   application:
     name: LoyaltyPoints
+  datasource:
+    url: jdbc:mysql://localhost:3306/loyalty_points
+    password: secret
+    username: user
+
