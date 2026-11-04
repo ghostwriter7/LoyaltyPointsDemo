@@ -1,8 +1,8 @@
 package com.rozplochowski.loyaltypoints.service;
 
 import com.rozplochowski.loyaltypoints.model.OrderSubmittedEvent;
-import com.rozplochowski.loyaltypoints.model.UserPoints;
-import com.rozplochowski.loyaltypoints.repository.UserPointsRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,23 +16,34 @@ import java.math.RoundingMode;
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 class OrderSubmittedEventProcessor {
-    private final UserPointsRepository userPointsRepository;
+
+    @PersistenceContext
+    private final EntityManager manager;
+
 
     @Transactional
     void processOrderSubmittedEvent(OrderSubmittedEvent event) {
-        var userPoints = userPointsRepository.findById(event.userId())
-                .orElseGet(() -> {
-                    var newUserPoints = new UserPoints();
-                    newUserPoints.setNickname("User-" + event.userId());
-                    newUserPoints.setUserId(event.userId());
-                    return newUserPoints;
-                });
         var points = event.total().divide(BigDecimal.TEN, RoundingMode.HALF_UP);
 
-        userPoints.addPoints(points.longValue());
+        var result = manager.createNativeQuery("insert ignore into processed_orders (order_id, user_id, points_awarded) values (:orderId, :userId, :pointsAwarded)")
+                .setParameter("orderId", event.orderId())
+                .setParameter("userId", event.userId())
+                .setParameter("pointsAwarded", points.longValue())
+                .executeUpdate();
 
-        userPointsRepository.save(userPoints);
+        if (result == 0) {
+            log.info("Order already processed: {}", event.orderId());
+            return;
+        }
 
-        log.info("User points updated for user id: {}, new points: {}", event.userId(), userPoints.getPoints());
+        manager.createNativeQuery("""
+                        insert into user_points (user_id, points, nickname) values (:userId, :points, :nickname) as new
+                        on duplicate key update user_points.points = user_points.points + new.points""")
+                .setParameter("userId", event.userId())
+                .setParameter("points", points.longValue())
+                .setParameter("nickname", "User-" + event.userId())
+                .executeUpdate();
+
+        log.info("User [{}] points increased by {}", event.userId(), points.longValue());
     }
 }
