@@ -2,7 +2,15 @@ POST http://localhost:8080/orders
 Content-Type: application/json
 
 {
-  "orderId": 2,
-  "total": 50,
-  "userId": 10
+  "orderId": 11,
+  "total": 30,
+  "userId": 3
 }
+
+###
+
+GET http://localhost:8080/dashboard/top
+
+###
+
+GET http://localhost:8080/dashboard/10

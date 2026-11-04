@@ -6,6 +6,7 @@ import jakarta.persistence.PersistenceContext;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ class OrderSubmittedEventProcessor {
     @PersistenceContext
     private final EntityManager manager;
 
+    private final ApplicationEventPublisher eventPublisher;
 
     @Transactional
     void processOrderSubmittedEvent(OrderSubmittedEvent event) {
@@ -43,6 +45,8 @@ class OrderSubmittedEventProcessor {
                 .setParameter("points", points.longValue())
                 .setParameter("nickname", "User-" + event.userId())
                 .executeUpdate();
+
+        eventPublisher.publishEvent(new UserPointsIncreasedEvent(event.userId(), points.longValue()));
 
         log.info("User [{}] points increased by {}", event.userId(), points.longValue());
     }
