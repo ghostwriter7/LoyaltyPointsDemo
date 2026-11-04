@@ -56,9 +56,9 @@ class OrderSubmittedEventProcessor {
         var userPointsChange = new UserPointsChange(userPoints.getNickname(), event.userId(), userPoints.getPoints(), userPoints.getVersion());
 
         var outbox = OutboxRecord.create(
-                userPoints.getUserId(), UserPoints.class.getSimpleName(), "UserPointsChanged",
+                userPoints.getUserId(), UserPoints.class.getSimpleName(), UserPointsChange.class.getSimpleName(),
                 objectMapper.writeValueAsString(userPointsChange),
-                "user_points.change"
+                "user.points.change"
         );
 
         manager.persist(outbox);

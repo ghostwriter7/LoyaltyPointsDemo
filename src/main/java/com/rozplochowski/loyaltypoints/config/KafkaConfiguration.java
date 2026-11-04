@@ -26,6 +26,11 @@ class KafkaConfiguration {
     }
 
     @Bean
+    NewTopic userPointsChangeTopic() {
+        return new NewTopic("user.points.change", 3, (short) 3);
+    }
+
+    @Bean
     CommonErrorHandler errorHandler(KafkaOperations<String, Object> kafkaOperations) {
         var recovery = new DeadLetterPublishingRecoverer(kafkaOperations, (consumerRecord, _) ->
                 new TopicPartition("order.submitted.dead-letter", consumerRecord.partition())
