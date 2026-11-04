@@ -5,4 +5,7 @@ spring:
     url: jdbc:mysql://localhost:3306/loyalty_points
     password: secret
     username: user
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
 
