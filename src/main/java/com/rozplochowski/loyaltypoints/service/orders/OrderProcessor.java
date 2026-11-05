@@ -47,7 +47,7 @@ class OrderProcessor {
                         on duplicate key update user_points.points = user_points.points + new.points, user_points.version = user_points.version + 1""")
                 .setParameter(USER_ID, event.userId())
                 .setParameter("points", points)
-                .setParameter("nickname", "User-" + event.userId())
+                .setParameter("nickname", event.nickname())
                 .executeUpdate();
 
         var userPoints = manager.createQuery("select up from UserPoints up where up.userId = :userId", UserPoints.class)
@@ -64,6 +64,6 @@ class OrderProcessor {
 
         manager.persist(outbox);
 
-        log.info("User [{}] points increased by {}", event.userId(), points);
+        log.info("User {} [{}] points increased by {}", event.nickname(), event.userId(), points);
     }
 }
