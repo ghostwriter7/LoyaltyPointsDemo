@@ -1,14 +1,15 @@
 package com.rozplochowski.loyaltypoints.service;
 
+import com.rozplochowski.loyaltypoints.repository.UserPointsRepository;
 import com.rozplochowski.loyaltypoints.service.dto.UserResult;
 import com.rozplochowski.loyaltypoints.service.dto.UserResultWithNeighbours;
+import jakarta.annotation.PostConstruct;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -20,9 +21,15 @@ import java.util.concurrent.atomic.AtomicReference;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class DashboardManager {
 
-    private final ConcurrentMap<Long, Long> pointsByUserId = new ConcurrentHashMap<>();
-
+    private final ConcurrentMap<Long, PointsVersion> pointsByUserId = new ConcurrentHashMap<>();
+    private final UserPointsRepository userPointsRepository;
     private final AtomicReference<Stats> stats = new AtomicReference<>(new Stats(List.of(), Map.of()));
+
+    @PostConstruct
+    void init() {
+        userPointsRepository.findAll()
+                .forEach(userPoints -> pointsByUserId.put(userPoints.getUserId(), new PointsVersion(userPoints.getVersion(), userPoints.getPoints())));
+    }
 
     public UserResultWithNeighbours getUserResult(long userId) {
         var statistics = stats.get();
@@ -64,18 +71,19 @@ public class DashboardManager {
         return new UserResult("User-" + userPoints.userId(), userPoints.points(), position + 1L);
     }
 
-    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
-    void updateDashboard(UserPointsIncreasedEvent event) {
-        log.info("Updating dashboard for user {}", event.userId());
+    @KafkaListener(topics = "user.points.change", groupId = "dashboard")
+    void updateDashboard(UserPointsChange event) {
+        log.info("Updating dashboard for user {} [{}], version {}, points {}", event.nickname(), event.userId(), event.version(), event.points());
 
-        pointsByUserId.merge(event.userId(), event.points(), Long::sum);
+        pointsByUserId.merge(event.userId(), new PointsVersion(event.version(), event.points()),
+                (oldValue, newValue) -> oldValue.version() < newValue.version() ? newValue : oldValue);
     }
 
     @Scheduled(fixedDelay = 60_000)
     void refreshCache() {
         List<UserPoints> ranking = pointsByUserId.entrySet()
                 .stream()
-                .map(e -> new UserPoints(e.getKey(), e.getValue()))
+                .map(e -> new UserPoints(e.getKey(), e.getValue().points()))
                 .sorted(Comparator.comparing(UserPoints::points)
                         .reversed()
                         .thenComparing(UserPoints::userId))
@@ -88,12 +96,17 @@ public class DashboardManager {
         }
 
         stats.set(new Stats(ranking, positionByUser));
+
+        log.info("Dashboard refreshed");
     }
 
     record Stats(List<UserPoints> ranking, Map<Long, Integer> positionByUser) {
     }
 
     record UserPoints(Long userId, Long points) {
+    }
+
+    record PointsVersion(int version, long points) {
     }
 
 }
