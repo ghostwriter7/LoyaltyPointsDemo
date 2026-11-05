@@ -19,7 +19,7 @@ import java.math.RoundingMode;
 @Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-class OrderSubmittedEventProcessor {
+class OrderProcessor {
 
     @PersistenceContext
     private final EntityManager manager;
@@ -29,12 +29,12 @@ class OrderSubmittedEventProcessor {
 
     @Transactional
     void processOrderSubmittedEvent(OrderSubmittedEvent event) {
-        var points = event.total().divide(BigDecimal.TEN, RoundingMode.HALF_UP);
+        var points = event.total().divide(BigDecimal.TEN, RoundingMode.HALF_UP).longValue();
 
         var result = manager.createNativeQuery("insert ignore into processed_orders (order_id, user_id, points_awarded) values (:orderId, :userId, :pointsAwarded)")
                 .setParameter("orderId", event.orderId())
                 .setParameter(USER_ID, event.userId())
-                .setParameter("pointsAwarded", points.longValue())
+                .setParameter("pointsAwarded", points)
                 .executeUpdate();
 
         if (result == 0) {
@@ -46,7 +46,7 @@ class OrderSubmittedEventProcessor {
                         insert into user_points (user_id, points, nickname) values (:userId, :points, :nickname) as new
                         on duplicate key update user_points.points = user_points.points + new.points, user_points.version = user_points.version + 1""")
                 .setParameter(USER_ID, event.userId())
-                .setParameter("points", points.longValue())
+                .setParameter("points", points)
                 .setParameter("nickname", "User-" + event.userId())
                 .executeUpdate();
 
@@ -64,6 +64,6 @@ class OrderSubmittedEventProcessor {
 
         manager.persist(outbox);
 
-        log.info("User [{}] points increased by {}", event.userId(), points.longValue());
+        log.info("User [{}] points increased by {}", event.userId(), points);
     }
 }

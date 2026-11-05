@@ -10,8 +10,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-class OrderSubmittedListener {
-    private final OrderSubmittedEventProcessor eventProcessor;
+class OrderListener {
+    private final OrderProcessor eventProcessor;
 
     @KafkaListener(topics = "order.submitted", groupId = "loyalty-points")
     void processOrderSubmittedEvent(OrderSubmittedEvent event) {
