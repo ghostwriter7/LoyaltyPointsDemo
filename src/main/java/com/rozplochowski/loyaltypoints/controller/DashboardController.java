@@ -2,7 +2,6 @@ package com.rozplochowski.loyaltypoints.controller;
 
 import com.rozplochowski.loyaltypoints.service.DashboardManager;
 import com.rozplochowski.loyaltypoints.service.dto.UserResult;
-import com.rozplochowski.loyaltypoints.service.dto.UserResultWithNeighbours;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +24,7 @@ class DashboardController {
     }
 
     @GetMapping("/{userId}")
-    UserResultWithNeighbours getUserResult(@PathVariable long userId) {
-        return dashboardManager.getUserResult(userId);
+    List<UserResult> getUserResult(@PathVariable long userId) {
+        return dashboardManager.getUserResultWithNeighbours(userId);
     }
 }

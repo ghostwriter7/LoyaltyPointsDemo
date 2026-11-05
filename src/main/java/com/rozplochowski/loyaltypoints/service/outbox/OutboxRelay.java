@@ -31,7 +31,7 @@ class OutboxRelay {
         List<CompletableFuture<RelayResult>> relayResults = outboxRecords.stream()
                 .map(outboxRecord -> {
                     log.info("Attempting to relay outbox record for {} [{}] due to {}", outboxRecord.getAggregateType(), outboxRecord.getAggregateId(), outboxRecord.getEventName());
-                    return kafkaOperations.send(outboxRecord.getTopic(), outboxRecord.getPayload())
+                    return kafkaOperations.send(outboxRecord.getTopic(), outboxRecord.getAggregateId().toString(), outboxRecord.getPayload())
                             .handle((result, exception) -> new RelayResult(outboxRecord, result, exception));
                 })
                 .toList();
