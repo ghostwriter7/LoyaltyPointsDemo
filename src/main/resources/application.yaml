@@ -16,7 +16,6 @@ spring:
         highlight_sql: true
   kafka:
     producer:
-      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         enable.idempotence: true
       acks: all

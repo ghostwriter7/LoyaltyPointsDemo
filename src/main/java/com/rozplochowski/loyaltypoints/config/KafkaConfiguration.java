@@ -1,7 +1,6 @@
 package com.rozplochowski.loyaltypoints.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
-import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.core.KafkaOperations;
@@ -21,8 +20,8 @@ class KafkaConfiguration {
     }
 
     @Bean
-    NewTopic deadLetterQueue() {
-        return new NewTopic("order.submitted.dead-letter", 3, (short) 3);
+    NewTopic orderSubmittedTopicDlq() {
+        return new NewTopic("order.submitted-dt", 3, (short) 3);
     }
 
     @Bean
@@ -31,12 +30,13 @@ class KafkaConfiguration {
     }
 
     @Bean
-    CommonErrorHandler errorHandler(KafkaOperations<String, Object> kafkaOperations) {
-        var recovery = new DeadLetterPublishingRecoverer(kafkaOperations, (consumerRecord, _) ->
-                new TopicPartition("order.submitted.dead-letter", consumerRecord.partition())
-        );
+    NewTopic userPointsChangeDlq() {
+        return new NewTopic("user.points.change-dlt", 3, (short) 3);
+    }
 
-        return new DefaultErrorHandler(recovery, new FixedBackOff(1000, 10));
+    @Bean
+    CommonErrorHandler errorHandler(KafkaOperations<String, String> kafkaOperations) {
+        return new DefaultErrorHandler(new DeadLetterPublishingRecoverer(kafkaOperations), new FixedBackOff(1000, 2));
     }
 
     @Bean
