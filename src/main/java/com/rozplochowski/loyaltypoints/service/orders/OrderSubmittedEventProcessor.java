@@ -1,8 +1,9 @@
-package com.rozplochowski.loyaltypoints.service;
+package com.rozplochowski.loyaltypoints.service.orders;
 
 import com.rozplochowski.loyaltypoints.model.OrderSubmittedEvent;
 import com.rozplochowski.loyaltypoints.model.UserPoints;
 import com.rozplochowski.loyaltypoints.model.outbox.OutboxRecord;
+import com.rozplochowski.loyaltypoints.service.domain.UserPointsChange;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import lombok.AccessLevel;

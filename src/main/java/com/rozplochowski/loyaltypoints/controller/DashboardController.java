@@ -1,7 +1,7 @@
 package com.rozplochowski.loyaltypoints.controller;
 
-import com.rozplochowski.loyaltypoints.service.DashboardManager;
-import com.rozplochowski.loyaltypoints.service.dto.UserResult;
+import com.rozplochowski.loyaltypoints.service.dashboard.DashboardManager;
+import com.rozplochowski.loyaltypoints.service.api.UserResult;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;

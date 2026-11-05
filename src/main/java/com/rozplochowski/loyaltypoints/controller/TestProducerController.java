@@ -24,7 +24,7 @@ class TestProducerController {
 
     @PostMapping
     void mockOrderSubmittedEvent(@RequestBody OrderSubmittedEvent event) {
-        var future = kafkaOperations.send("order.submitted", objectMapper.writeValueAsString(event));
+        var future = kafkaOperations.send("order.submitted", event.userId().toString(), objectMapper.writeValueAsString(event));
         future.thenAcceptAsync(result -> {
             var metadata = result.getRecordMetadata();
             log.info("Order submitted event sent to Kafka to partition {}", metadata.partition());

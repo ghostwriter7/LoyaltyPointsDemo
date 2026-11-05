@@ -1,4 +1,4 @@
-package com.rozplochowski.loyaltypoints.service;
+package com.rozplochowski.loyaltypoints.service.orders;
 
 import com.rozplochowski.loyaltypoints.model.OrderSubmittedEvent;
 import lombok.AccessLevel;
@@ -6,7 +6,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @Service

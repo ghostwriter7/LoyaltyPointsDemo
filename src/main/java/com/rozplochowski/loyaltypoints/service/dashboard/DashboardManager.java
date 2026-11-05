@@ -1,7 +1,8 @@
-package com.rozplochowski.loyaltypoints.service;
+package com.rozplochowski.loyaltypoints.service.dashboard;
 
 import com.rozplochowski.loyaltypoints.repository.UserPointsRepository;
-import com.rozplochowski.loyaltypoints.service.dto.UserResult;
+import com.rozplochowski.loyaltypoints.service.api.UserResult;
+import com.rozplochowski.loyaltypoints.service.domain.UserPointsChange;
 import jakarta.annotation.PostConstruct;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

@@ -1,4 +1,4 @@
-package com.rozplochowski.loyaltypoints.service;
+package com.rozplochowski.loyaltypoints.service.domain;
 
 public record UserPointsChange(
         String nickname,
